@@ -7,7 +7,7 @@ load_dotenv()
 
 
 def check_env():
-    missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY") if not os.getenv(k)]
+    missing = [k for k in ("GOOGLE_API_KEY", "OPENAI_API_KEY") if not os.getenv(k)]
     if missing:
         print(f"ERROR: Missing required env vars: {', '.join(missing)}")
         print("Add them to your .env file and retry.")

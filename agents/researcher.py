@@ -1,4 +1,6 @@
-import anthropic
+import os
+from google import genai
+from google.genai import types
 from agents.utils import parse_json
 
 _SYSTEM = """\
@@ -8,31 +10,30 @@ in the global analog photography community based on your knowledge of the space.
 
 
 def research_trending_topics() -> list[dict]:
-    client = anthropic.Anthropic()
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-    response = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1500,
-        system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        messages=[{
-            "role": "user",
-            "content": (
-                "Identify 8 trending and high-potential topics in darkroom and analog photography "
-                "for social media content today. Consider: darkroom techniques, film stocks, "
-                "chemistry, printing methods, equipment, artistic movements, community discussions, "
-                "and beginner education.\n\n"
-                "Return a JSON array only — no prose, no markdown fences:\n"
-                "[\n"
-                "  {\n"
-                "    \"topic\": \"topic name\",\n"
-                "    \"description\": \"one sentence description\",\n"
-                "    \"trend_reason\": \"why this resonates right now\",\n"
-                "    \"content_potential\": \"high|medium|low\",\n"
-                "    \"visual_potential\": \"brief image concept\"\n"
-                "  }\n"
-                "]"
-            )
-        }]
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=(
+            "Identify 8 trending and high-potential topics in darkroom and analog photography "
+            "for social media content today. Consider: darkroom techniques, film stocks, "
+            "chemistry, printing methods, equipment, artistic movements, community discussions, "
+            "and beginner education.\n\n"
+            "Return a JSON array only — no prose, no markdown fences:\n"
+            "[\n"
+            "  {\n"
+            "    \"topic\": \"topic name\",\n"
+            "    \"description\": \"one sentence description\",\n"
+            "    \"trend_reason\": \"why this resonates right now\",\n"
+            "    \"content_potential\": \"high|medium|low\",\n"
+            "    \"visual_potential\": \"brief image concept\"\n"
+            "  }\n"
+            "]"
+        ),
+        config=types.GenerateContentConfig(
+            system_instruction=_SYSTEM,
+            max_output_tokens=1500,
+        ),
     )
 
-    return parse_json(response.content[0].text)
+    return parse_json(response.text)

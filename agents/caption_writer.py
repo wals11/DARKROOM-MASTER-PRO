@@ -1,5 +1,7 @@
+import os
 import json
-import anthropic
+from google import genai
+from google.genai import types
 from agents.utils import parse_json
 
 _SYSTEM = """\
@@ -14,26 +16,25 @@ Platform conventions:
 
 
 def write_captions(strategy: dict) -> dict[str, str]:
-    client = anthropic.Anthropic()
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-    response = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=3000,
-        system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        messages=[{
-            "role": "user",
-            "content": (
-                f"Write platform-specific captions for this content strategy:\n\n"
-                f"{json.dumps(strategy, indent=2)}\n\n"
-                "Return a JSON object only — no prose, no markdown fences:\n"
-                "{\n"
-                "  \"instagram\": \"...\",\n"
-                "  \"facebook\": \"...\",\n"
-                "  \"twitter\": \"...\",\n"
-                "  \"linkedin\": \"...\"\n"
-                "}"
-            )
-        }]
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=(
+            f"Write platform-specific captions for this content strategy:\n\n"
+            f"{json.dumps(strategy, indent=2)}\n\n"
+            "Return a JSON object only — no prose, no markdown fences:\n"
+            "{\n"
+            "  \"instagram\": \"...\",\n"
+            "  \"facebook\": \"...\",\n"
+            "  \"twitter\": \"...\",\n"
+            "  \"linkedin\": \"...\"\n"
+            "}"
+        ),
+        config=types.GenerateContentConfig(
+            system_instruction=_SYSTEM,
+            max_output_tokens=3000,
+        ),
     )
 
-    return parse_json(response.content[0].text)
+    return parse_json(response.text)
